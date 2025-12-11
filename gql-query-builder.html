@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GraphQL Query Builder Tool</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+        padding: 20px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        max-width: 600px;
+        background-color: #f9f9f9;
+      }
+      textarea {
+        width: 100%;
+        height: 150px;
+        margin-bottom: 10px;
+      }
+      button {
+        padding: 10px 15px;
+        margin-right: 10px;
+        cursor: pointer;
+      }
+      #output {
+        margin-top: 20px;
+        border: 1px solid #ccc;
+        padding: 10px;
+        background-color: #fff;
+        white-space: pre-wrap;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>GraphQL Query Builder Tool</h1>
+    <h3>Paste your GraphQL query below:</h3>
+    <textarea
+      id="query"
+      placeholder="Paste your GraphQL query here..."
+    ></textarea>
+    <h3>Paste your GraphQL fragments below:</h3>
+    <textarea
+      id="fragments"
+      placeholder="Paste your GraphQL fragments here..."
+    ></textarea>
+    <button id="generate">Generate Complete Query</button>
+    <button id="minify">Minify Output</button>
+    <button id="copy">Copy to Clipboard</button>
+
+    <h3>Expected Fragments:</h3>
+    <div id="expected-fragments"></div>
+
+    <h3>Fragments Required by Fragments:</h3>
+    <div id="nested-fragments"></div>
+
+    <h3>Output:</h3>
+    <div id="output-stats"></div>
+    <pre id="output"></pre>
+
+    <h3>Estimated Complexity:</h3>
+    <div id="complexity"></div>
+
+    <script>
+      function extractExpectedFragments(query) {
+        const fragmentRegex = /\.\.\.([A-Za-z_][A-Za-z0-9_]*)/g;
+        const matches = [];
+        let match;
+        while ((match = fragmentRegex.exec(query)) !== null) {
+          if (!matches.includes(match[1])) {
+            matches.push(match[1]);
+          }
+        }
+        return matches;
+      }
+
+      function extractDefinedFragments(fragments) {
+        const fragmentDefRegex = /fragment\s+([A-Za-z_][A-Za-z0-9_]*)\s+on/g;
+        const matches = [];
+        let match;
+        while ((match = fragmentDefRegex.exec(fragments)) !== null) {
+          if (!matches.includes(match[1])) {
+            matches.push(match[1]);
+          }
+        }
+        return matches;
+      }
+
+      function calculateComplexity(query, fragments) {
+        const combined = query + "\n" + fragments;
+
+        // Count fields (words followed by { or end of selection, excluding keywords)
+        const keywords = [
+          "query",
+          "mutation",
+          "subscription",
+          "fragment",
+          "on",
+          "true",
+          "false",
+          "null",
+        ];
+
+        // Remove strings and comments
+        const cleaned = combined
+          .replace(/#.*/g, "") // Remove comments
+          .replace(/"[^"]*"/g, "") // Remove strings
+          .replace(/\.\.\.[A-Za-z_][A-Za-z0-9_]*/g, "__FRAGMENT_SPREAD__"); // Mark fragment spreads
+
+        // Count fragment spreads
+        const fragmentSpreads = (cleaned.match(/__FRAGMENT_SPREAD__/g) || [])
+          .length;
+
+        // Count fields: identifiers that are followed by { or are leaf fields
+        const fieldRegex = /([A-Za-z_][A-Za-z0-9_]*)\s*(?:[\({:]|\}|,|\n|$)/g;
+        const allMatches = [];
+        let match;
+        while ((match = fieldRegex.exec(cleaned)) !== null) {
+          const fieldName = match[1];
+          if (
+            !keywords.includes(fieldName) &&
+            fieldName !== "__FRAGMENT_SPREAD__"
+          ) {
+            allMatches.push(fieldName);
+          }
+        }
+
+        // Alternative: count all identifiers that look like fields
+        const simpleFieldRegex = /\b([a-z][A-Za-z0-9_]*)\b/g;
+        const simpleMatches = [];
+        const cleanedForFields = combined
+          .replace(/#.*/g, "")
+          .replace(/"[^"]*"/g, "")
+          .replace(/\.\.\.[A-Za-z_][A-Za-z0-9_]*/g, "");
+
+        while ((match = simpleFieldRegex.exec(cleanedForFields)) !== null) {
+          const fieldName = match[1];
+          if (!keywords.includes(fieldName)) {
+            simpleMatches.push(fieldName);
+          }
+        }
+
+        return {
+          fields: simpleMatches.length,
+          fragmentSpreads: fragmentSpreads,
+          total: simpleMatches.length + fragmentSpreads,
+        };
+      }
+
+      function updateComplexity() {
+        const query = document.getElementById("query").value;
+        const fragments = document.getElementById("fragments").value;
+        const complexity = calculateComplexity(query, fragments);
+
+        const container = document.getElementById("complexity");
+        container.innerHTML = `
+          <span style="margin-right: 15px;"><strong>Fields:</strong> ${
+            complexity.fields
+          }</span>
+          <span style="margin-right: 15px;"><strong>Fragment Spreads:</strong> ${
+            complexity.fragmentSpreads
+          }</span>
+          <span style="color: ${
+            complexity.total > 100 ? "orange" : "green"
+          };"><strong>Total:</strong> ${complexity.total} points</span>
+        `;
+      }
+
+      document.getElementById("query").addEventListener("input", function () {
+        const query = document.getElementById("query").value;
+        const fragments = document.getElementById("fragments").value;
+        updateExpectedFragments(query, fragments);
+        updateComplexity();
+      });
+
+      document
+        .getElementById("fragments")
+        .addEventListener("input", function () {
+          const query = document.getElementById("query").value;
+          const fragments = document.getElementById("fragments").value;
+          updateExpectedFragments(query, fragments);
+          updateComplexity();
+        });
+
+      document.getElementById("query").addEventListener("input", function () {
+        const query = document.getElementById("query").value;
+        const fragments = document.getElementById("fragments").value;
+        updateExpectedFragments(query, fragments);
+      });
+
+      document
+        .getElementById("fragments")
+        .addEventListener("input", function () {
+          const query = document.getElementById("query").value;
+          const fragments = document.getElementById("fragments").value;
+          updateExpectedFragments(query, fragments);
+        });
+
+      function updateExpectedFragments(query, fragments) {
+        const expectedByQuery = extractExpectedFragments(query);
+        const defined = extractDefinedFragments(fragments);
+        const expectedByFragments = extractExpectedFragments(fragments);
+
+        // Filter out already defined fragments
+        const missingFromQuery = expectedByQuery.filter(
+          (name) => !defined.includes(name)
+        );
+        const missingFromFragments = expectedByFragments.filter(
+          (name) => !defined.includes(name)
+        );
+
+        // Query expected fragments
+        const queryContainer = document.getElementById("expected-fragments");
+        if (missingFromQuery.length === 0) {
+          queryContainer.innerHTML = "<em>All fragments satisfied</em>";
+        } else {
+          const queryHtml = missingFromQuery
+            .map((name) => {
+              return `<span style="color: red; margin-right: 10px;">✗ ${name}</span>`;
+            })
+            .join("");
+          queryContainer.innerHTML = queryHtml;
+        }
+
+        // Nested fragments (fragments required by fragments)
+        const nestedContainer = document.getElementById("nested-fragments");
+        if (missingFromFragments.length === 0) {
+          nestedContainer.innerHTML = "<em>All nested fragments satisfied</em>";
+        } else {
+          const nestedHtml = missingFromFragments
+            .map((name) => {
+              return `<span style="color: red; margin-right: 10px;">✗ ${name}</span>`;
+            })
+            .join("");
+          nestedContainer.innerHTML = nestedHtml;
+        }
+      }
+
+      document
+        .getElementById("generate")
+        .addEventListener("click", function () {
+          const fragments = document.getElementById("fragments").value;
+          const query = document.getElementById("query").value;
+          const completeQuery = `${query}\n\n${fragments}`;
+          document.getElementById("output").textContent = completeQuery;
+        });
+
+      document.getElementById("minify").addEventListener("click", function () {
+        const output = document.getElementById("output").textContent;
+        const minifiedOutput = output.replace(/\s+/g, " ").trim();
+        document.getElementById("output").textContent = minifiedOutput;
+
+        // Calculate byte size
+        const byteSize = new Blob([minifiedOutput]).size;
+        const statsContainer = document.getElementById("output-stats");
+        statsContainer.innerHTML = `<strong>Size:</strong> ${byteSize.toLocaleString()} bytes (${(
+          byteSize / 1024
+        ).toFixed(2)} KB)`;
+      });
+
+      document.getElementById("copy").addEventListener("click", function () {
+        const output = document.getElementById("output").textContent;
+        if (output) {
+          navigator.clipboard
+            .writeText(output)
+            .then(function () {
+              const copyBtn = document.getElementById("copy");
+              const originalText = copyBtn.textContent;
+              copyBtn.textContent = "Copied!";
+              setTimeout(function () {
+                copyBtn.textContent = originalText;
+              }, 2000);
+            })
+            .catch(function (err) {
+              alert("Failed to copy: " + err);
+            });
+        }
+      });
+    </script>
+  </body>
+</html>
