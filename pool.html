@@ -114,6 +114,12 @@
         transform: translateY(-2px);
       }
 
+      button:disabled {
+        background: #ccc;
+        cursor: not-allowed;
+        transform: none;
+      }
+
       .btn-add {
         background: #28a745;
       }
@@ -126,13 +132,37 @@
         width: 100%;
       }
 
+      .btn-undo {
+        background: #dc3545;
+        width: 100%;
+        margin-top: 10px;
+      }
+
+      .btn-undo:hover:not(:disabled) {
+        background: #c82333;
+      }
+
+      .last-match {
+        margin-top: 15px;
+        padding: 10px 15px;
+        background: #e9ecef;
+        border-radius: 8px;
+        font-size: 14px;
+        color: #666;
+        text-align: center;
+      }
+
+      .last-match strong {
+        color: #333;
+      }
+
       .leaderboard {
         margin-top: 30px;
       }
 
       .leaderboard-header {
         display: grid;
-        grid-template-columns: 60px 1fr 100px 100px 100px 100px;
+        grid-template-columns: 60px 1fr 100px 100px 100px;
         padding: 15px;
         background: #f8f9fa;
         border-radius: 8px;
@@ -143,7 +173,7 @@
 
       .player-row {
         display: grid;
-        grid-template-columns: 60px 1fr 100px 100px 100px 100px;
+        grid-template-columns: 60px 1fr 100px 100px 100px;
         align-items: center;
         padding: 15px;
         margin-bottom: 10px;
@@ -200,16 +230,6 @@
       .win-pct {
         color: #667eea;
         font-weight: bold;
-      }
-
-      .delete-btn {
-        padding: 8px 15px;
-        background: #6c757d;
-        font-size: 14px;
-      }
-
-      .delete-btn:hover {
-        background: #5a6268;
       }
 
       .empty-state {
@@ -291,6 +311,15 @@
           </div>
         </div>
         <button class="btn-record" onclick="addMatch()">Record Match</button>
+        <div id="lastMatchInfo"></div>
+        <button
+          class="btn-undo"
+          id="undoBtn"
+          onclick="undoLastMatch()"
+          disabled
+        >
+          ↩ Undo Last Match
+        </button>
       </div>
 
       <div class="leaderboard">
@@ -300,7 +329,6 @@
           <div>Wins</div>
           <div>Losses</div>
           <div>Win %</div>
-          <div>Action</div>
         </div>
         <div id="leaderboardBody">
           <div class="empty-state">
@@ -428,17 +456,40 @@
 
         saveData();
         renderLeaderboard();
+        updateLastMatchInfo();
       }
 
-      function deletePlayer(playerName) {
-        if (confirm(`Delete ${playerName} and all their matches?`)) {
-          players = players.filter((p) => p !== playerName);
-          matches = matches.filter(
-            (m) => m.winner !== playerName && m.loser !== playerName
-          );
+      function undoLastMatch() {
+        if (matches.length === 0) return;
+
+        const lastMatch = matches[matches.length - 1];
+        if (
+          confirm(
+            `Undo last match: ${lastMatch.winner} beat ${lastMatch.loser}?`
+          )
+        ) {
+          matches.pop();
           saveData();
-          updatePlayerSelects();
           renderLeaderboard();
+          updateLastMatchInfo();
+        }
+      }
+
+      function updateLastMatchInfo() {
+        const lastMatchInfo = document.getElementById("lastMatchInfo");
+        const undoBtn = document.getElementById("undoBtn");
+
+        if (matches.length === 0) {
+          lastMatchInfo.innerHTML = "";
+          undoBtn.disabled = true;
+        } else {
+          const lastMatch = matches[matches.length - 1];
+          lastMatchInfo.innerHTML = `
+            <div class="last-match">
+              Last match: <strong>${lastMatch.winner}</strong> beat <strong>${lastMatch.loser}</strong>
+            </div>
+          `;
+          undoBtn.disabled = false;
         }
       }
 
@@ -514,11 +565,6 @@
                         <div class="stat win-pct">${player.winPct.toFixed(
                           1
                         )}%</div>
-                        <div class="stat">
-                            <button class="delete-btn" onclick="deletePlayer('${
-                              player.displayName
-                            }')">Delete</button>
-                        </div>
                     </div>
                 `;
           })
@@ -537,6 +583,7 @@
       // Initial render
       updatePlayerSelects();
       renderLeaderboard();
+      updateLastMatchInfo();
     </script>
   </body>
 </html>
