@@ -97,10 +97,6 @@
         border-color: #667eea;
       }
 
-      .date-group {
-        margin-bottom: 15px;
-      }
-
       button {
         padding: 12px 25px;
         background: #667eea;
@@ -294,12 +290,6 @@
             </select>
           </div>
         </div>
-        <div class="date-group">
-          <div class="input-group">
-            <label>Match Date</label>
-            <input type="date" id="matchDate" />
-          </div>
-        </div>
         <button class="btn-record" onclick="addMatch()">Record Match</button>
       </div>
 
@@ -326,9 +316,6 @@
 
       // Load data from storage on startup
       loadData();
-
-      // Set today's date as default
-      document.getElementById("matchDate").valueAsDate = new Date();
 
       function saveData() {
         const data = {
@@ -409,11 +396,9 @@
       function addMatch() {
         const winnerSelect = document.getElementById("winnerSelect");
         const loserSelect = document.getElementById("loserSelect");
-        const dateInput = document.getElementById("matchDate");
 
         const winner = winnerSelect.value;
         const loser = loserSelect.value;
-        const date = dateInput.value;
 
         if (!winner) {
           alert("Please select a winner");
@@ -434,13 +419,11 @@
           id: Date.now(),
           winner: winner,
           loser: loser,
-          date: date || new Date().toISOString().split("T")[0],
         };
 
         matches.push(match);
         winnerSelect.value = "";
         loserSelect.value = "";
-        dateInput.valueAsDate = new Date();
         winnerSelect.focus();
 
         saveData();
