@@ -48,6 +48,7 @@
     <button id="generate">Generate Complete Query</button>
     <button id="minify">Minify Output</button>
     <button id="copy">Copy to Clipboard</button>
+    <button id="auto-populate">Auto-Populate Fragments</button>
     <button id="save-fragments">Save Fragments</button>
     <button id="clear-fragments">Clear Saved</button>
 
@@ -292,15 +293,25 @@
         }, 2000);
       }
 
-      // Load fragments from local storage
       function loadFragmentsFromLocalStorage() {
+        const query = document.getElementById("query").value;
         const savedFragments = localStorage.getItem("gql-saved-fragments");
-        if (savedFragments) {
-          document.getElementById("fragments").value = savedFragments;
-          const query = document.getElementById("query").value;
-          updateExpectedFragments(query, savedFragments);
-          updateComplexity();
+
+        // Only auto-populate if there's a query with expected fragments
+        if (query && savedFragments) {
+          const expectedFragments = extractExpectedFragments(query);
+          if (expectedFragments.length > 0) {
+            // Don't load all fragments, just trigger auto-populate for missing ones
+            autoPopulateMissingFragments();
+          }
         }
+
+        // Update UI
+        updateExpectedFragments(
+          query,
+          document.getElementById("fragments").value
+        );
+        updateComplexity();
       }
 
       // Clear saved fragments from local storage
@@ -314,13 +325,110 @@
         }, 2000);
       }
 
+      // Extract a specific fragment definition from text
+      function extractFragmentDefinition(fragmentsText, fragmentName) {
+        // Match fragment definition including its body
+        const regex = new RegExp(
+          `fragment\\s+${fragmentName}\\s+on\\s+[A-Za-z_][A-Za-z0-9_]*\\s*\\{`,
+          "g"
+        );
+        const match = regex.exec(fragmentsText);
+        if (!match) return null;
+
+        // Find the matching closing brace
+        const startIndex = match.index;
+        let braceCount = 0;
+        let endIndex = startIndex;
+        let foundOpen = false;
+
+        for (let i = startIndex; i < fragmentsText.length; i++) {
+          if (fragmentsText[i] === "{") {
+            braceCount++;
+            foundOpen = true;
+          } else if (fragmentsText[i] === "}") {
+            braceCount--;
+          }
+
+          if (foundOpen && braceCount === 0) {
+            endIndex = i + 1;
+            break;
+          }
+        }
+
+        return fragmentsText.substring(startIndex, endIndex);
+      }
+
+      // Auto-populate missing fragments from local storage
+      function autoPopulateMissingFragments() {
+        const savedFragments = localStorage.getItem("gql-saved-fragments");
+        if (!savedFragments) return;
+
+        const query = document.getElementById("query").value;
+        const currentFragments = document.getElementById("fragments").value;
+
+        // Get all expected fragments from query and current fragments
+        const expectedFromQuery = extractExpectedFragments(query);
+        const expectedFromFragments =
+          extractExpectedFragments(currentFragments);
+        const allExpected = [
+          ...new Set([...expectedFromQuery, ...expectedFromFragments]),
+        ];
+
+        // Get currently defined fragments
+        const defined = extractDefinedFragments(currentFragments);
+
+        // Find missing fragments
+        const missing = allExpected.filter((name) => !defined.includes(name));
+
+        if (missing.length === 0) return;
+
+        // Try to find missing fragments in saved fragments
+        const fragmentsToAdd = [];
+        const addedNames = [];
+
+        for (const fragmentName of missing) {
+          const fragmentDef = extractFragmentDefinition(
+            savedFragments,
+            fragmentName
+          );
+          if (fragmentDef) {
+            fragmentsToAdd.push(fragmentDef);
+            addedNames.push(fragmentName);
+          }
+        }
+
+        if (fragmentsToAdd.length > 0) {
+          // Append found fragments to current fragments
+          const separator = currentFragments.trim() ? "\n\n" : "";
+          document.getElementById("fragments").value =
+            currentFragments.trim() + separator + fragmentsToAdd.join("\n\n");
+
+          // Recursively check for nested fragments
+          autoPopulateMissingFragments();
+
+          // Update UI
+          updateExpectedFragments(
+            query,
+            document.getElementById("fragments").value
+          );
+          updateComplexity();
+
+          // Show notification
+          console.log(`Auto-populated fragments: ${addedNames.join(", ")}`);
+        }
+      }
+
+      document
+        .getElementById("clear-fragments")
+        .addEventListener("click", clearSavedFragments);
+
       document
         .getElementById("save-fragments")
         .addEventListener("click", saveFragmentsToLocalStorage);
 
       document
-        .getElementById("clear-fragments")
-        .addEventListener("click", clearSavedFragments);
+        .getElementById("auto-populate")
+        .addEventListener("click", autoPopulateMissingFragments);
 
       // Load saved fragments on page load
       document.addEventListener(
