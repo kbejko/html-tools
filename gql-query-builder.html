@@ -45,17 +45,14 @@
       placeholder="Paste your GraphQL query here..."
     ></textarea>
     <h3>Paste your GraphQL fragments below:</h3>
-    <div class="btn-container">
-      <button id="auto-populate">Auto-Populate Fragments</button>
-      <button id="save-fragments">Save Fragments</button>
-    </div>
     <textarea
       id="fragments"
       placeholder="Paste your GraphQL fragments here..."
     ></textarea>
     <div class="btn-container">
-      <button id="generate">Generate Complete Query</button>
-      <button id="minify">Minify Output</button>
+      <button id="auto-populate">Populate Saved Fragments</button>
+      <button id="generate">Generate Query</button>
+      <button id="minify">Minify Query</button>
       <button id="copy">Copy to Clipboard</button>
     </div>
 
@@ -288,17 +285,22 @@
         }
       });
 
-      // Save fragments to local storage
-      function saveFragmentsToLocalStorage() {
-        const fragments = document.getElementById("fragments").value;
-        localStorage.setItem("gql-saved-fragments", fragments);
-        const saveBtn = document.getElementById("save-fragments");
-        const originalText = saveBtn.textContent;
-        saveBtn.textContent = "Saved!";
-        setTimeout(function () {
-          saveBtn.textContent = originalText;
-        }, 2000);
+      // Auto-save fragments with debounce
+      let autoSaveTimeout;
+      function autoSaveFragments() {
+        clearTimeout(autoSaveTimeout);
+        autoSaveTimeout = setTimeout(function () {
+          const fragments = document.getElementById("fragments").value;
+          if (fragments.trim()) {
+            localStorage.setItem("gql-saved-fragments", fragments);
+            console.log("Fragments auto-saved");
+          }
+        }, 1000); // Save after 1 second of no typing
       }
+
+      document
+        .getElementById("fragments")
+        .addEventListener("input", autoSaveFragments);
 
       function loadFragmentsFromLocalStorage() {
         const query = document.getElementById("query").value;
@@ -413,10 +415,6 @@
           console.log(`Auto-populated fragments: ${addedNames.join(", ")}`);
         }
       }
-
-      document
-        .getElementById("save-fragments")
-        .addEventListener("click", saveFragmentsToLocalStorage);
 
       document
         .getElementById("auto-populate")
