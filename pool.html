@@ -1,542 +1,559 @@
 <!DOCTYPE html>
 <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pool Leaderboard</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
 
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pool Leaderboard</title>
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        padding: 20px;
+      }
 
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      min-height: 100vh;
-      padding: 20px;
-    }
+      .container {
+        max-width: 900px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        padding: 30px;
+      }
 
-    .container {
-      max-width: 900px;
-      margin: 0 auto;
-      background: white;
-      border-radius: 15px;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-      padding: 30px;
-    }
+      h1 {
+        color: #667eea;
+        text-align: center;
+        margin-bottom: 30px;
+        font-size: 2.5em;
+      }
 
-    h1 {
-      color: #667eea;
-      text-align: center;
-      margin-bottom: 30px;
-      font-size: 2.5em;
-    }
+      .section {
+        background: #f8f9fa;
+        padding: 25px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+      }
 
-    .section {
-      background: #f8f9fa;
-      padding: 25px;
-      border-radius: 10px;
-      margin-bottom: 20px;
-    }
+      .section-title {
+        font-size: 18px;
+        font-weight: bold;
+        color: #333;
+        margin-bottom: 15px;
+      }
 
-    .section-title {
-      font-size: 18px;
-      font-weight: bold;
-      color: #333;
-      margin-bottom: 15px;
-    }
+      .add-player-section {
+        display: flex;
+        gap: 10px;
+        align-items: flex-end;
+      }
 
-    .add-player-section {
-      display: flex;
-      gap: 10px;
-      align-items: flex-end;
-    }
+      .match-inputs {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+        margin-bottom: 15px;
+      }
 
-    .match-inputs {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 15px;
-      margin-bottom: 15px;
-    }
+      .input-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
 
-    .input-group {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
+      label {
+        font-weight: bold;
+        color: #333;
+        font-size: 14px;
+      }
 
-    label {
-      font-weight: bold;
-      color: #333;
-      font-size: 14px;
-    }
+      .winner-label {
+        color: #28a745;
+      }
 
-    .winner-label {
-      color: #28a745;
-    }
+      .loser-label {
+        color: #dc3545;
+      }
 
-    .loser-label {
-      color: #dc3545;
-    }
+      input,
+      select {
+        padding: 12px 15px;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 16px;
+        transition: border-color 0.3s;
+        background: white;
+      }
 
-    input,
-    select {
-      padding: 12px 15px;
-      border: 2px solid #e0e0e0;
-      border-radius: 8px;
-      font-size: 16px;
-      transition: border-color 0.3s;
-      background: white;
-    }
+      input:focus,
+      select:focus {
+        outline: none;
+        border-color: #667eea;
+      }
 
-    input:focus,
-    select:focus {
-      outline: none;
-      border-color: #667eea;
-    }
+      .date-group {
+        margin-bottom: 15px;
+      }
 
-    .date-group {
-      margin-bottom: 15px;
-    }
+      button {
+        padding: 12px 25px;
+        background: #667eea;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        cursor: pointer;
+        transition: all 0.3s;
+        font-weight: bold;
+      }
 
-    button {
-      padding: 12px 25px;
-      background: #667eea;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      font-size: 16px;
-      cursor: pointer;
-      transition: all 0.3s;
-      font-weight: bold;
-    }
+      button:hover {
+        background: #5568d3;
+        transform: translateY(-2px);
+      }
 
-    button:hover {
-      background: #5568d3;
-      transform: translateY(-2px);
-    }
+      .btn-add {
+        background: #28a745;
+      }
 
-    .btn-add {
-      background: #28a745;
-    }
+      .btn-add:hover {
+        background: #218838;
+      }
 
-    .btn-add:hover {
-      background: #218838;
-    }
+      .btn-record {
+        width: 100%;
+      }
 
-    .btn-record {
-      width: 100%;
-    }
+      .leaderboard {
+        margin-top: 30px;
+      }
 
-    .leaderboard {
-      margin-top: 30px;
-    }
+      .leaderboard-header {
+        display: grid;
+        grid-template-columns: 60px 1fr 100px 100px 100px 100px;
+        padding: 15px;
+        background: #f8f9fa;
+        border-radius: 8px;
+        font-weight: bold;
+        color: #666;
+        margin-bottom: 10px;
+      }
 
-    .leaderboard-header {
-      display: grid;
-      grid-template-columns: 60px 1fr 100px 100px 100px 100px;
-      padding: 15px;
-      background: #f8f9fa;
-      border-radius: 8px;
-      font-weight: bold;
-      color: #666;
-      margin-bottom: 10px;
-    }
+      .player-row {
+        display: grid;
+        grid-template-columns: 60px 1fr 100px 100px 100px 100px;
+        align-items: center;
+        padding: 15px;
+        margin-bottom: 10px;
+        background: #f8f9fa;
+        border-radius: 8px;
+        transition: transform 0.2s;
+      }
 
-    .player-row {
-      display: grid;
-      grid-template-columns: 60px 1fr 100px 100px 100px 100px;
-      align-items: center;
-      padding: 15px;
-      margin-bottom: 10px;
-      background: #f8f9fa;
-      border-radius: 8px;
-      transition: transform 0.2s;
-    }
+      .player-row:hover {
+        transform: translateX(5px);
+        background: #e9ecef;
+      }
 
-    .player-row:hover {
-      transform: translateX(5px);
-      background: #e9ecef;
-    }
+      .rank {
+        font-size: 24px;
+        font-weight: bold;
+        color: #667eea;
+        text-align: center;
+      }
 
-    .rank {
-      font-size: 24px;
-      font-weight: bold;
-      color: #667eea;
-      text-align: center;
-    }
+      .rank-1 {
+        color: #ffd700;
+      }
 
-    .rank-1 {
-      color: #FFD700;
-    }
+      .rank-2 {
+        color: #c0c0c0;
+      }
 
-    .rank-2 {
-      color: #C0C0C0;
-    }
+      .rank-3 {
+        color: #cd7f32;
+      }
 
-    .rank-3 {
-      color: #CD7F32;
-    }
+      .player-name {
+        font-size: 18px;
+        font-weight: bold;
+        color: #333;
+      }
 
-    .player-name {
-      font-size: 18px;
-      font-weight: bold;
-      color: #333;
-    }
+      .stat {
+        text-align: center;
+        font-size: 18px;
+      }
 
-    .stat {
-      text-align: center;
-      font-size: 18px;
-    }
+      .wins {
+        color: #28a745;
+        font-weight: bold;
+      }
 
-    .wins {
-      color: #28a745;
-      font-weight: bold;
-    }
+      .losses {
+        color: #dc3545;
+        font-weight: bold;
+      }
 
-    .losses {
-      color: #dc3545;
-      font-weight: bold;
-    }
+      .win-pct {
+        color: #667eea;
+        font-weight: bold;
+      }
 
-    .win-pct {
-      color: #667eea;
-      font-weight: bold;
-    }
+      .delete-btn {
+        padding: 8px 15px;
+        background: #6c757d;
+        font-size: 14px;
+      }
 
-    .delete-btn {
-      padding: 8px 15px;
-      background: #6c757d;
-      font-size: 14px;
-    }
+      .delete-btn:hover {
+        background: #5a6268;
+      }
 
-    .delete-btn:hover {
-      background: #5a6268;
-    }
+      .empty-state {
+        text-align: center;
+        padding: 40px;
+        color: #999;
+        font-size: 18px;
+      }
 
-    .empty-state {
-      text-align: center;
-      padding: 40px;
-      color: #999;
-      font-size: 18px;
-    }
+      .summary-stats {
+        display: flex;
+        justify-content: space-around;
+        margin-bottom: 30px;
+        padding: 20px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 10px;
+        color: white;
+      }
 
-    .summary-stats {
-      display: flex;
-      justify-content: space-around;
-      margin-bottom: 30px;
-      padding: 20px;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      border-radius: 10px;
-      color: white;
-    }
+      .summary-stat {
+        text-align: center;
+      }
 
-    .summary-stat {
-      text-align: center;
-    }
+      .summary-number {
+        font-size: 32px;
+        font-weight: bold;
+      }
 
-    .summary-number {
-      font-size: 32px;
-      font-weight: bold;
-    }
+      .summary-label {
+        font-size: 14px;
+        opacity: 0.9;
+      }
+    </style>
+  </head>
 
-    .summary-label {
-      font-size: 14px;
-      opacity: 0.9;
-    }
-  </style>
-</head>
+  <body>
+    <div class="container">
+      <h1>🎱 Pool Leaderboard</h1>
 
-<body>
-  <div class="container">
-    <h1>🎱 Pool Leaderboard</h1>
-
-    <div class="summary-stats">
-      <div class="summary-stat">
-        <div class="summary-number" id="totalPlayers">0</div>
-        <div class="summary-label">Players</div>
+      <div class="summary-stats">
+        <div class="summary-stat">
+          <div class="summary-number" id="totalPlayers">0</div>
+          <div class="summary-label">Players</div>
+        </div>
+        <div class="summary-stat">
+          <div class="summary-number" id="totalMatches">0</div>
+          <div class="summary-label">Total Matches</div>
+        </div>
       </div>
-      <div class="summary-stat">
-        <div class="summary-number" id="totalMatches">0</div>
-        <div class="summary-label">Total Matches</div>
+
+      <div class="section">
+        <div class="section-title">Add New Player</div>
+        <div class="add-player-section">
+          <div class="input-group" style="flex: 1">
+            <input
+              type="text"
+              id="newPlayerName"
+              placeholder="Enter player name..."
+            />
+          </div>
+          <button class="btn-add" onclick="addPlayer()">Add Player</button>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Record Match</div>
+        <div class="match-inputs">
+          <div class="input-group">
+            <label class="winner-label">Winner</label>
+            <select id="winnerSelect">
+              <option value="">Select winner...</option>
+            </select>
+          </div>
+          <div class="input-group">
+            <label class="loser-label">Loser</label>
+            <select id="loserSelect">
+              <option value="">Select loser...</option>
+            </select>
+          </div>
+        </div>
+        <div class="date-group">
+          <div class="input-group">
+            <label>Match Date</label>
+            <input type="date" id="matchDate" />
+          </div>
+        </div>
+        <button class="btn-record" onclick="addMatch()">Record Match</button>
+      </div>
+
+      <div class="leaderboard">
+        <div class="leaderboard-header">
+          <div>Rank</div>
+          <div>Player</div>
+          <div>Wins</div>
+          <div>Losses</div>
+          <div>Win %</div>
+          <div>Action</div>
+        </div>
+        <div id="leaderboardBody">
+          <div class="empty-state">
+            No players yet. Add your first player above!
+          </div>
+        </div>
       </div>
     </div>
 
-    <div class="section">
-      <div class="section-title">Add New Player</div>
-      <div class="add-player-section">
-        <div class="input-group" style="flex: 1;">
-          <input type="text" id="newPlayerName" placeholder="Enter player name..." />
-        </div>
-        <button class="btn-add" onclick="addPlayer()">Add Player</button>
-      </div>
-    </div>
+    <script>
+      let players = [];
+      let matches = [];
 
-    <div class="section">
-      <div class="section-title">Record Match</div>
-      <div class="match-inputs">
-        <div class="input-group">
-          <label class="winner-label">Winner</label>
-          <select id="winnerSelect">
-            <option value="">Select winner...</option>
-          </select>
-        </div>
-        <div class="input-group">
-          <label class="loser-label">Loser</label>
-          <select id="loserSelect">
-            <option value="">Select loser...</option>
-          </select>
-        </div>
-      </div>
-      <div class="date-group">
-        <div class="input-group">
-          <label>Match Date</label>
-          <input type="date" id="matchDate" />
-        </div>
-      </div>
-      <button class="btn-record" onclick="addMatch()">Record Match</button>
-    </div>
+      // Load data from storage on startup
+      loadData();
 
-    <div class="leaderboard">
-      <div class="leaderboard-header">
-        <div>Rank</div>
-        <div>Player</div>
-        <div>Wins</div>
-        <div>Losses</div>
-        <div>Win %</div>
-        <div>Action</div>
-      </div>
-      <div id="leaderboardBody">
-        <div class="empty-state">No players yet. Add your first player above!</div>
-      </div>
-    </div>
-  </div>
+      // Set today's date as default
+      document.getElementById("matchDate").valueAsDate = new Date();
 
-  <script>
-    let players = [];
-    let matches = [];
+      function saveData() {
+        const data = {
+          players: players,
+          matches: matches,
+        };
+        localStorage.setItem("poolLeaderboard", JSON.stringify(data));
+      }
 
-    // Load data from storage on startup
-    loadData();
-
-    // Set today's date as default
-    document.getElementById('matchDate').valueAsDate = new Date();
-
-    function saveData() {
-      const data = {
-        players: players,
-        matches: matches
-      };
-      localStorage.setItem('poolLeaderboard', JSON.stringify(data));
-    }
-
-    function loadData() {
-      const saved = localStorage.getItem('poolLeaderboard');
-      if (saved) {
-        try {
-          const data = JSON.parse(saved);
-          players = data.players || [];
-          matches = data.matches || [];
-        } catch (e) {
-          console.error('Error loading data:', e);
+      function loadData() {
+        const saved = localStorage.getItem("poolLeaderboard");
+        if (saved) {
+          try {
+            const data = JSON.parse(saved);
+            players = data.players || [];
+            matches = data.matches || [];
+          } catch (e) {
+            console.error("Error loading data:", e);
+          }
         }
       }
-    }
 
-    function addPlayer() {
-      const input = document.getElementById('newPlayerName');
-      const name = input.value.trim();
+      function addPlayer() {
+        const input = document.getElementById("newPlayerName");
+        const name = input.value.trim();
 
-      if (!name) {
-        alert('Please enter a player name');
-        return;
-      }
+        if (!name) {
+          alert("Please enter a player name");
+          return;
+        }
 
-      // Check if player already exists (case-insensitive)
-      const exists = players.some(p => p.toLowerCase() === name.toLowerCase());
-      if (exists) {
-        alert('Player already exists!');
-        return;
-      }
+        // Check if player already exists (case-insensitive)
+        const exists = players.some(
+          (p) => p.toLowerCase() === name.toLowerCase()
+        );
+        if (exists) {
+          alert("Player already exists!");
+          return;
+        }
 
-      players.push(name);
-      players.sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
-      input.value = '';
-      input.focus();
+        players.push(name);
+        players.sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
+        input.value = "";
+        input.focus();
 
-      saveData();
-      updatePlayerSelects();
-      renderLeaderboard();
-    }
-
-    function updatePlayerSelects() {
-      const winnerSelect = document.getElementById('winnerSelect');
-      const loserSelect = document.getElementById('loserSelect');
-
-      const winnerValue = winnerSelect.value;
-      const loserValue = loserSelect.value;
-
-      winnerSelect.innerHTML = '<option value="">Select winner...</option>';
-      loserSelect.innerHTML = '<option value="">Select loser...</option>';
-
-      players.forEach(player => {
-        const winnerOption = document.createElement('option');
-        winnerOption.value = player;
-        winnerOption.textContent = player;
-        winnerSelect.appendChild(winnerOption);
-
-        const loserOption = document.createElement('option');
-        loserOption.value = player;
-        loserOption.textContent = player;
-        loserSelect.appendChild(loserOption);
-      });
-
-      // Restore previous selections if they still exist
-      if (players.includes(winnerValue)) winnerSelect.value = winnerValue;
-      if (players.includes(loserValue)) loserSelect.value = loserValue;
-    }
-
-    function addMatch() {
-      const winnerSelect = document.getElementById('winnerSelect');
-      const loserSelect = document.getElementById('loserSelect');
-      const dateInput = document.getElementById('matchDate');
-
-      const winner = winnerSelect.value;
-      const loser = loserSelect.value;
-      const date = dateInput.value;
-
-      if (!winner) {
-        alert('Please select a winner');
-        return;
-      }
-
-      if (!loser) {
-        alert('Please select a loser');
-        return;
-      }
-
-      if (winner === loser) {
-        alert('Winner and loser cannot be the same person');
-        return;
-      }
-
-      const match = {
-        id: Date.now(),
-        winner: winner,
-        loser: loser,
-        date: date || new Date().toISOString().split('T')[0]
-      };
-
-      matches.push(match);
-      winnerSelect.value = '';
-      loserSelect.value = '';
-      dateInput.valueAsDate = new Date();
-      winnerSelect.focus();
-
-      saveData();
-      renderLeaderboard();
-    }
-
-    function deletePlayer(playerName) {
-      if (confirm(`Delete ${playerName} and all their matches?`)) {
-        players = players.filter(p => p !== playerName);
-        matches = matches.filter(m => m.winner !== playerName && m.loser !== playerName);
         saveData();
         updatePlayerSelects();
         renderLeaderboard();
       }
-    }
 
-    function calculateStats() {
-      const playerStats = {};
+      function updatePlayerSelects() {
+        const winnerSelect = document.getElementById("winnerSelect");
+        const loserSelect = document.getElementById("loserSelect");
 
-      // Initialize all players
-      players.forEach(player => {
-        playerStats[player] = {
-          displayName: player,
-          wins: 0,
-          losses: 0
-        };
-      });
+        const winnerValue = winnerSelect.value;
+        const loserValue = loserSelect.value;
 
-      // Count wins and losses from matches
-      matches.forEach(match => {
-        if (playerStats[match.winner]) {
-          playerStats[match.winner].wins++;
-        }
-        if (playerStats[match.loser]) {
-          playerStats[match.loser].losses++;
-        }
-      });
+        winnerSelect.innerHTML = '<option value="">Select winner...</option>';
+        loserSelect.innerHTML = '<option value="">Select loser...</option>';
 
-      // Convert to array and calculate win percentage
-      const playersArray = Object.values(playerStats).map(player => {
-        const total = player.wins + player.losses;
-        const winPct = total > 0 ? (player.wins / total * 100) : 0;
-        return {
-          ...player,
-          total: total,
-          winPct: winPct
-        };
-      });
+        players.forEach((player) => {
+          const winnerOption = document.createElement("option");
+          winnerOption.value = player;
+          winnerOption.textContent = player;
+          winnerSelect.appendChild(winnerOption);
 
-      // Sort by wins (descending), then by win percentage
-      playersArray.sort((a, b) => {
-        if (b.wins !== a.wins) return b.wins - a.wins;
-        return b.winPct - a.winPct;
-      });
+          const loserOption = document.createElement("option");
+          loserOption.value = player;
+          loserOption.textContent = player;
+          loserSelect.appendChild(loserOption);
+        });
 
-      return playersArray;
-    }
-
-    function renderLeaderboard() {
-      const body = document.getElementById('leaderboardBody');
-      const totalPlayers = document.getElementById('totalPlayers');
-      const totalMatches = document.getElementById('totalMatches');
-
-      const playerStats = calculateStats();
-
-      totalPlayers.textContent = players.length;
-      totalMatches.textContent = matches.length;
-
-      if (players.length === 0) {
-        body.innerHTML = '<div class="empty-state">No players yet. Add your first player above!</div>';
-        return;
+        // Restore previous selections if they still exist
+        if (players.includes(winnerValue)) winnerSelect.value = winnerValue;
+        if (players.includes(loserValue)) loserSelect.value = loserValue;
       }
 
-      body.innerHTML = playerStats.map((player, index) => {
-        const rank = index + 1;
-        const rankClass = rank <= 3 ? `rank-${rank}` : '';
+      function addMatch() {
+        const winnerSelect = document.getElementById("winnerSelect");
+        const loserSelect = document.getElementById("loserSelect");
+        const dateInput = document.getElementById("matchDate");
 
-        return `
+        const winner = winnerSelect.value;
+        const loser = loserSelect.value;
+        const date = dateInput.value;
+
+        if (!winner) {
+          alert("Please select a winner");
+          return;
+        }
+
+        if (!loser) {
+          alert("Please select a loser");
+          return;
+        }
+
+        if (winner === loser) {
+          alert("Winner and loser cannot be the same person");
+          return;
+        }
+
+        const match = {
+          id: Date.now(),
+          winner: winner,
+          loser: loser,
+          date: date || new Date().toISOString().split("T")[0],
+        };
+
+        matches.push(match);
+        winnerSelect.value = "";
+        loserSelect.value = "";
+        dateInput.valueAsDate = new Date();
+        winnerSelect.focus();
+
+        saveData();
+        renderLeaderboard();
+      }
+
+      function deletePlayer(playerName) {
+        if (confirm(`Delete ${playerName} and all their matches?`)) {
+          players = players.filter((p) => p !== playerName);
+          matches = matches.filter(
+            (m) => m.winner !== playerName && m.loser !== playerName
+          );
+          saveData();
+          updatePlayerSelects();
+          renderLeaderboard();
+        }
+      }
+
+      function calculateStats() {
+        const playerStats = {};
+
+        // Initialize all players
+        players.forEach((player) => {
+          playerStats[player] = {
+            displayName: player,
+            wins: 0,
+            losses: 0,
+          };
+        });
+
+        // Count wins and losses from matches
+        matches.forEach((match) => {
+          if (playerStats[match.winner]) {
+            playerStats[match.winner].wins++;
+          }
+          if (playerStats[match.loser]) {
+            playerStats[match.loser].losses++;
+          }
+        });
+
+        // Convert to array and calculate win percentage
+        const playersArray = Object.values(playerStats).map((player) => {
+          const total = player.wins + player.losses;
+          const winPct = total > 0 ? (player.wins / total) * 100 : 0;
+          return {
+            ...player,
+            total: total,
+            winPct: winPct,
+          };
+        });
+
+        // Sort by win percentage (descending), then by total games played
+        playersArray.sort((a, b) => {
+          if (b.winPct !== a.winPct) return b.winPct - a.winPct;
+          return b.total - a.total;
+        });
+
+        return playersArray;
+      }
+
+      function renderLeaderboard() {
+        const body = document.getElementById("leaderboardBody");
+        const totalPlayers = document.getElementById("totalPlayers");
+        const totalMatches = document.getElementById("totalMatches");
+
+        const playerStats = calculateStats();
+
+        totalPlayers.textContent = players.length;
+        totalMatches.textContent = matches.length;
+
+        if (players.length === 0) {
+          body.innerHTML =
+            '<div class="empty-state">No players yet. Add your first player above!</div>';
+          return;
+        }
+
+        body.innerHTML = playerStats
+          .map((player, index) => {
+            const rank = index + 1;
+            const rankClass = rank <= 3 ? `rank-${rank}` : "";
+
+            return `
                     <div class="player-row">
                         <div class="rank ${rankClass}">${rank}</div>
                         <div class="player-name">${player.displayName}</div>
                         <div class="stat wins">${player.wins}</div>
                         <div class="stat losses">${player.losses}</div>
-                        <div class="stat win-pct">${player.winPct.toFixed(1)}%</div>
+                        <div class="stat win-pct">${player.winPct.toFixed(
+                          1
+                        )}%</div>
                         <div class="stat">
-                            <button class="delete-btn" onclick="deletePlayer('${player.displayName}')">Delete</button>
+                            <button class="delete-btn" onclick="deletePlayer('${
+                              player.displayName
+                            }')">Delete</button>
                         </div>
                     </div>
                 `;
-      }).join('');
-    }
-
-    // Allow Enter key to add player
-    document.getElementById('newPlayerName').addEventListener('keypress', function (e) {
-      if (e.key === 'Enter') {
-        addPlayer();
+          })
+          .join("");
       }
-    });
 
-    // Initial render
-    updatePlayerSelects();
-    renderLeaderboard();
-  </script>
-</body>
+      // Allow Enter key to add player
+      document
+        .getElementById("newPlayerName")
+        .addEventListener("keypress", function (e) {
+          if (e.key === "Enter") {
+            addPlayer();
+          }
+        });
 
+      // Initial render
+      updatePlayerSelects();
+      renderLeaderboard();
+    </script>
+  </body>
 </html>
