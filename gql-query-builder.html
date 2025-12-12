@@ -48,6 +48,8 @@
     <button id="generate">Generate Complete Query</button>
     <button id="minify">Minify Output</button>
     <button id="copy">Copy to Clipboard</button>
+    <button id="save-fragments">Save Fragments</button>
+    <button id="clear-fragments">Clear Saved</button>
 
     <h3>Expected Fragments:</h3>
     <div id="expected-fragments"></div>
@@ -277,6 +279,54 @@
             });
         }
       });
+
+      // Save fragments to local storage
+      function saveFragmentsToLocalStorage() {
+        const fragments = document.getElementById("fragments").value;
+        localStorage.setItem("gql-saved-fragments", fragments);
+        const saveBtn = document.getElementById("save-fragments");
+        const originalText = saveBtn.textContent;
+        saveBtn.textContent = "Saved!";
+        setTimeout(function () {
+          saveBtn.textContent = originalText;
+        }, 2000);
+      }
+
+      // Load fragments from local storage
+      function loadFragmentsFromLocalStorage() {
+        const savedFragments = localStorage.getItem("gql-saved-fragments");
+        if (savedFragments) {
+          document.getElementById("fragments").value = savedFragments;
+          const query = document.getElementById("query").value;
+          updateExpectedFragments(query, savedFragments);
+          updateComplexity();
+        }
+      }
+
+      // Clear saved fragments from local storage
+      function clearSavedFragments() {
+        localStorage.removeItem("gql-saved-fragments");
+        const clearBtn = document.getElementById("clear-fragments");
+        const originalText = clearBtn.textContent;
+        clearBtn.textContent = "Cleared!";
+        setTimeout(function () {
+          clearBtn.textContent = originalText;
+        }, 2000);
+      }
+
+      document
+        .getElementById("save-fragments")
+        .addEventListener("click", saveFragmentsToLocalStorage);
+
+      document
+        .getElementById("clear-fragments")
+        .addEventListener("click", clearSavedFragments);
+
+      // Load saved fragments on page load
+      document.addEventListener(
+        "DOMContentLoaded",
+        loadFragmentsFromLocalStorage
+      );
     </script>
   </body>
 </html>
