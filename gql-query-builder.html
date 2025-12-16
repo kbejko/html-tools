@@ -7,16 +7,33 @@
     <style>
       body {
         font-family: Arial, sans-serif;
-        margin: 20px;
-        padding: 20px;
+        margin: 0;
+        width: 100vw;
+        height: 100dvh;
+        box-sizing: border-box;
+      }
+      main {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        place-content: center;
+        gap: 2rem;
+        max-width: 1200px;
+        margin-inline: auto;
+        padding: 3rem;
         border: 1px solid #ccc;
-        border-radius: 5px;
-        max-width: 600px;
+        border-radius: 4px;
         background-color: #f9f9f9;
+      }
+      header {
+        padding-block: 1rem;
+      }
+      h1 {
+        text-align: center;
+        margin: 0;
       }
       textarea {
         width: 100%;
-        height: 150px;
+        height: 300px;
         margin-bottom: 10px;
       }
       button {
@@ -24,11 +41,11 @@
         cursor: pointer;
       }
       #output {
-        margin-top: 20px;
         border: 1px solid #ccc;
         padding: 10px;
         background-color: #fff;
         white-space: pre-wrap;
+        min-height: 664px;
       }
       .btn-container {
         display: flex;
@@ -38,38 +55,46 @@
     </style>
   </head>
   <body>
-    <h1>GraphQL Query Builder Tool</h1>
-    <h3>Paste your GraphQL query below:</h3>
-    <textarea
-      id="query"
-      placeholder="Paste your GraphQL query here..."
-    ></textarea>
-    <h3>Paste your GraphQL fragments below:</h3>
-    <textarea
-      id="fragments"
-      placeholder="Paste your GraphQL fragments here..."
-    ></textarea>
-    <div class="btn-container">
-      <button id="auto-populate">Populate Saved Fragments</button>
-      <button id="generate">Generate Query</button>
-      <button id="minify">Minify Query</button>
-      <button id="copy">Copy to Clipboard</button>
-    </div>
-
-    <h3>Expected Fragments:</h3>
-    <div id="expected-fragments"></div>
-
-    <h3>Fragments Required by Fragments:</h3>
-    <div id="nested-fragments"></div>
-
-    <h3>Output:</h3>
-    <div id="output-stats"></div>
-    <pre id="output"></pre>
-
-    <h3>Estimated Complexity:</h3>
-    <div id="complexity"></div>
+    <header>
+      <h1>GraphQL Query Builder Tool</h1>
+    </header>
+    <main>
+      <div>
+        <section>
+          <h3>Paste your GraphQL query below:</h3>
+          <textarea
+            id="query"
+            placeholder="Paste your GraphQL query here..."
+          ></textarea>
+        </section>
+        <section>
+          <h3>Paste your GraphQL fragments below:</h3>
+          <textarea
+            id="fragments"
+            placeholder="Paste your GraphQL fragments here..."
+          ></textarea>
+        </section>
+        <section class="btn-container">
+          <button id="generate">Generate Query</button>
+          <button id="minify">Minify Query</button>
+          <button id="copy">Copy to Clipboard</button>
+        </section>
+        <section>
+          <h3>Missing Fragments:</h3>
+          <div id="missing-fragments"></div>
+        </section>
+      </div>
+      <section>
+        <h3>Output:</h3>
+        <div id="output-stats"></div>
+        <pre id="output"></pre>
+      </section>
+    </main>
 
     <script>
+      const queryInput = document.getElementById("query");
+      const fragmentsInput = document.getElementById("fragments");
+
       function extractExpectedFragments(query) {
         const fragmentRegex = /\.\.\.([A-Za-z_][A-Za-z0-9_]*)/g;
         const matches = [];
@@ -94,145 +119,45 @@
         return matches;
       }
 
-      function calculateComplexity(query, fragments) {
-        const combined = query + "\n" + fragments;
-
-        // Count fields (words followed by { or end of selection, excluding keywords)
-        const keywords = [
-          "query",
-          "mutation",
-          "subscription",
-          "fragment",
-          "on",
-          "true",
-          "false",
-          "null",
-        ];
-
-        // Remove strings and comments
-        const cleaned = combined
-          .replace(/#.*/g, "") // Remove comments
-          .replace(/"[^"]*"/g, "") // Remove strings
-          .replace(/\.\.\.[A-Za-z_][A-Za-z0-9_]*/g, "__FRAGMENT_SPREAD__"); // Mark fragment spreads
-
-        // Count fragment spreads
-        const fragmentSpreads = (cleaned.match(/__FRAGMENT_SPREAD__/g) || [])
-          .length;
-
-        // Count fields: identifiers that are followed by { or are leaf fields
-        const fieldRegex = /([A-Za-z_][A-Za-z0-9_]*)\s*(?:[\({:]|\}|,|\n|$)/g;
-        const allMatches = [];
-        let match;
-        while ((match = fieldRegex.exec(cleaned)) !== null) {
-          const fieldName = match[1];
-          if (
-            !keywords.includes(fieldName) &&
-            fieldName !== "__FRAGMENT_SPREAD__"
-          ) {
-            allMatches.push(fieldName);
-          }
-        }
-
-        // Alternative: count all identifiers that look like fields
-        const simpleFieldRegex = /\b([a-z][A-Za-z0-9_]*)\b/g;
-        const simpleMatches = [];
-        const cleanedForFields = combined
-          .replace(/#.*/g, "")
-          .replace(/"[^"]*"/g, "")
-          .replace(/\.\.\.[A-Za-z_][A-Za-z0-9_]*/g, "");
-
-        while ((match = simpleFieldRegex.exec(cleanedForFields)) !== null) {
-          const fieldName = match[1];
-          if (!keywords.includes(fieldName)) {
-            simpleMatches.push(fieldName);
-          }
-        }
-
-        return {
-          fields: simpleMatches.length,
-          fragmentSpreads: fragmentSpreads,
-          total: simpleMatches.length + fragmentSpreads,
-        };
-      }
-
-      function updateComplexity() {
-        const query = document.getElementById("query").value;
-        const fragments = document.getElementById("fragments").value;
-        const complexity = calculateComplexity(query, fragments);
-
-        const container = document.getElementById("complexity");
-        container.innerHTML = `
-          <span style="margin-right: 15px;"><strong>Fields:</strong> ${
-            complexity.fields
-          }</span>
-          <span style="margin-right: 15px;"><strong>Fragment Spreads:</strong> ${
-            complexity.fragmentSpreads
-          }</span>
-          <span style="color: ${
-            complexity.total > 100 ? "orange" : "green"
-          };"><strong>Total:</strong> ${complexity.total} points</span>
-        `;
-      }
-
-      document.getElementById("query").addEventListener("input", function () {
-        const query = document.getElementById("query").value;
-        const fragments = document.getElementById("fragments").value;
+      queryInput.addEventListener("input", function () {
+        const query = queryInput.value;
+        const fragments = fragmentsInput.value;
         updateExpectedFragments(query, fragments);
       });
 
-      document
-        .getElementById("fragments")
-        .addEventListener("input", function () {
-          const query = document.getElementById("query").value;
-          const fragments = document.getElementById("fragments").value;
-          updateExpectedFragments(query, fragments);
-        });
+      fragmentsInput.addEventListener("input", function () {
+        const query = queryInput.value;
+        const fragments = fragmentsInput.value;
+        updateExpectedFragments(query, fragments);
+      });
 
       function updateExpectedFragments(query, fragments) {
         const expectedByQuery = extractExpectedFragments(query);
-        const defined = extractDefinedFragments(fragments);
         const expectedByFragments = extractExpectedFragments(fragments);
+        const definedFragments = extractDefinedFragments(fragments);
+        const missingFragments = [
+          ...expectedByQuery,
+          ...expectedByFragments,
+        ].filter((name) => !definedFragments.includes(name));
 
-        // Filter out already defined fragments
-        const missingFromQuery = expectedByQuery.filter(
-          (name) => !defined.includes(name)
-        );
-        const missingFromFragments = expectedByFragments.filter(
-          (name) => !defined.includes(name)
-        );
-
-        // Query expected fragments
-        const queryContainer = document.getElementById("expected-fragments");
-        if (missingFromQuery.length === 0) {
+        const queryContainer = document.getElementById("missing-fragments");
+        if (missingFragments.length === 0) {
           queryContainer.innerHTML = "<em>All fragments satisfied</em>";
         } else {
-          const queryHtml = missingFromQuery
+          const queryHtml = missingFragments
             .map((name) => {
               return `<span style="color: red; margin-right: 10px;">✗ ${name}</span>`;
             })
             .join("");
           queryContainer.innerHTML = queryHtml;
         }
-
-        // Nested fragments (fragments required by fragments)
-        const nestedContainer = document.getElementById("nested-fragments");
-        if (missingFromFragments.length === 0) {
-          nestedContainer.innerHTML = "<em>All nested fragments satisfied</em>";
-        } else {
-          const nestedHtml = missingFromFragments
-            .map((name) => {
-              return `<span style="color: red; margin-right: 10px;">✗ ${name}</span>`;
-            })
-            .join("");
-          nestedContainer.innerHTML = nestedHtml;
-        }
       }
 
       document
         .getElementById("generate")
         .addEventListener("click", function () {
-          const fragments = document.getElementById("fragments").value;
-          const query = document.getElementById("query").value;
+          const fragments = fragmentsInput.value;
+          const query = queryInput.value;
           const completeQuery = `${query}\n\n${fragments}`;
           document.getElementById("output").textContent = completeQuery;
         });
@@ -274,12 +199,12 @@
       function autoSaveFragments() {
         clearTimeout(autoSaveTimeout);
         autoSaveTimeout = setTimeout(function () {
-          const fragments = document.getElementById("fragments").value;
+          const fragments = fragmentsInput.value;
           if (fragments.trim()) {
             localStorage.setItem("gql-saved-fragments", fragments);
             console.log("Fragments auto-saved");
           }
-        }, 1000); // Save after 1 second of no typing
+        }, 1000);
       }
 
       document
@@ -287,12 +212,14 @@
         .addEventListener("input", autoSaveFragments);
 
       function loadFragmentsFromLocalStorage() {
-        const query = document.getElementById("query").value;
+        const query = queryInput.value;
         const savedFragments = localStorage.getItem("gql-saved-fragments");
 
         // Only auto-populate if there's a query with expected fragments
         if (query && savedFragments) {
           const expectedFragments = extractExpectedFragments(query);
+          console.log({ expectedFragments });
+
           if (expectedFragments.length > 0) {
             // Don't load all fragments, just trigger auto-populate for missing ones
             autoPopulateMissingFragments();
@@ -300,11 +227,7 @@
         }
 
         // Update UI
-        updateExpectedFragments(
-          query,
-          document.getElementById("fragments").value
-        );
-        updateComplexity();
+        updateExpectedFragments(query, fragmentsInput.value);
       }
 
       // Extract a specific fragment definition from text
@@ -342,73 +265,38 @@
 
       // Auto-populate missing fragments from local storage
       function autoPopulateMissingFragments() {
-        const savedFragments = localStorage.getItem("gql-saved-fragments");
-        if (!savedFragments) return;
+        const localStorageFragments = localStorage.getItem(
+          "gql-saved-fragments"
+        );
+        if (!localStorageFragments) return;
 
-        const query = document.getElementById("query").value;
-        const currentFragments = document.getElementById("fragments").value;
+        const query = queryInput.value;
 
-        // Get all expected fragments from query and current fragments
         const expectedFromQuery = extractExpectedFragments(query);
-        const expectedFromFragments =
-          extractExpectedFragments(currentFragments);
-        const allExpected = [
-          ...new Set([...expectedFromQuery, ...expectedFromFragments]),
-        ];
+        const savedFragmentNames = extractExpectedFragments(
+          localStorageFragments
+        );
 
-        // Get currently defined fragments
-        const defined = extractDefinedFragments(currentFragments);
+        const missingFragmentNames = expectedFromQuery.filter(
+          (name) => !savedFragmentNames.includes(name)
+        );
 
-        // Find missing fragments
-        const missing = allExpected.filter((name) => !defined.includes(name));
+        if (missingFragmentNames.length === 0) return;
 
-        if (missing.length === 0) return;
-
-        // Try to find missing fragments in saved fragments
-        const fragmentsToAdd = [];
-        const addedNames = [];
-
-        for (const fragmentName of missing) {
+        for (const fragmentName of missingFragmentNames) {
           const fragmentDef = extractFragmentDefinition(
-            savedFragments,
+            localStorageFragments,
             fragmentName
           );
           if (fragmentDef) {
-            fragmentsToAdd.push(fragmentDef);
-            addedNames.push(fragmentName);
+            fragmentsInput.value += `${fragmentDef}\n`;
+            updateExpectedFragments(query, fragmentsInput.value);
           }
-        }
-
-        if (fragmentsToAdd.length > 0) {
-          // Append found fragments to current fragments
-          const separator = currentFragments.trim() ? "\n\n" : "";
-          document.getElementById("fragments").value =
-            currentFragments.trim() + separator + fragmentsToAdd.join("\n\n");
-
-          // Recursively check for nested fragments
-          autoPopulateMissingFragments();
-
-          // Update UI
-          updateExpectedFragments(
-            query,
-            document.getElementById("fragments").value
-          );
-          updateComplexity();
-
-          // Show notification
-          console.log(`Auto-populated fragments: ${addedNames.join(", ")}`);
         }
       }
 
-      document
-        .getElementById("auto-populate")
-        .addEventListener("click", autoPopulateMissingFragments);
-
-      // Load saved fragments on page load
-      document.addEventListener(
-        "DOMContentLoaded",
-        loadFragmentsFromLocalStorage
-      );
+      queryInput.addEventListener("input", autoPopulateMissingFragments);
+      fragmentsInput.addEventListener("input", autoPopulateMissingFragments);
     </script>
   </body>
 </html>
