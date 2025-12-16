@@ -178,22 +178,6 @@
         const query = document.getElementById("query").value;
         const fragments = document.getElementById("fragments").value;
         updateExpectedFragments(query, fragments);
-        updateComplexity();
-      });
-
-      document
-        .getElementById("fragments")
-        .addEventListener("input", function () {
-          const query = document.getElementById("query").value;
-          const fragments = document.getElementById("fragments").value;
-          updateExpectedFragments(query, fragments);
-          updateComplexity();
-        });
-
-      document.getElementById("query").addEventListener("input", function () {
-        const query = document.getElementById("query").value;
-        const fragments = document.getElementById("fragments").value;
-        updateExpectedFragments(query, fragments);
       });
 
       document
